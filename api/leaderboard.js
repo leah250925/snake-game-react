@@ -74,6 +74,14 @@ module.exports = async (req, res) => {
     }
   } catch (error) {
     console.error('API Error:', error)
+    
+    if (error.message.includes('leaderboard') || error.message.includes('relation') || error.message.includes('table')) {
+      return res.status(503).json({ 
+        error: 'Database table not ready',
+        message: 'Please create the leaderboard table in Supabase'
+      })
+    }
+    
     return res.status(500).json({ error: error.message })
   }
 }

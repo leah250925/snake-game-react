@@ -58,6 +58,14 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Auth Error:', error)
+    
+    if (error.message.includes('users') || error.message.includes('relation') || error.message.includes('table')) {
+      return res.status(503).json({ 
+        error: 'Database table not ready',
+        message: 'Please create the users table in Supabase'
+      })
+    }
+    
     return res.status(500).json({ error: error.message })
   }
 }
