@@ -1,17 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
-const USERS_KEY = 'snake_users'
+const API_URL = '/api/auth'
 const CURRENT_USER_KEY = 'snake_current_user'
-const LEADERBOARD_KEY = 'snake_leaderboard'
-
-const getUsers = () => {
-  const users = localStorage.getItem(USERS_KEY)
-  return users ? JSON.parse(users) : []
-}
-
-const saveUsers = (users) => {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
-}
 
 const getCurrentUser = () => {
   return localStorage.getItem(CURRENT_USER_KEY)
@@ -25,82 +15,85 @@ const clearCurrentUser = () => {
   localStorage.removeItem(CURRENT_USER_KEY)
 }
 
-const getLeaderboard = () => {
-  const leaderboard = localStorage.getItem(LEADERBOARD_KEY)
-  return leaderboard ? JSON.parse(leaderboard) : []
-}
-
-const saveLeaderboard = (leaderboard) => {
-  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard))
-}
-
 const Login = ({ onLogin, onRegister }) => {
   const [isLogin, setIsLogin] = useState(true)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    setUsers(getUsers())
-  }, [])
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
 
     if (!username || !password) {
       setError('Please fill in all fields')
+      setLoading(false)
       return
     }
 
-    const user = users.find(u => u.username === username)
-    
-    if (!user) {
-      setError('User not found')
-      return
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', username, password })
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) throw new Error(data.error)
+      
+      setCurrentUser(username)
+      onLogin(username)
+    } catch (err) {
+      setError(err.message || 'Login failed')
+    } finally {
+      setLoading(false)
     }
-
-    if (user.password !== password) {
-      setError('Incorrect password')
-      return
-    }
-
-    setCurrentUser(username)
-    onLogin(username)
   }
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
 
     if (!username || !password) {
       setError('Please fill in all fields')
+      setLoading(false)
       return
     }
 
     if (username.length < 3) {
       setError('Username must be at least 3 characters')
+      setLoading(false)
       return
     }
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters')
+      setLoading(false)
       return
     }
 
-    if (users.find(u => u.username === username)) {
-      setError('Username already exists')
-      return
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'register', username, password })
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) throw new Error(data.error)
+      
+      setCurrentUser(username)
+      onRegister(username)
+    } catch (err) {
+      setError(err.message || 'Registration failed')
+    } finally {
+      setLoading(false)
     }
-
-    const newUser = { username, password }
-    const newUsers = [...users, newUser]
-    saveUsers(newUsers)
-    setUsers(newUsers)
-    
-    setCurrentUser(username)
-    onRegister(username)
   }
 
   return (
@@ -240,20 +233,21 @@ const Login = ({ onLogin, onRegister }) => {
 
           <button
             type="submit"
+            disabled={loading}
             style={{
               width: '100%',
               padding: '15px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: loading ? '#ccc' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '10px',
               fontSize: '18px',
               fontWeight: 'bold',
-              cursor: 'pointer',
+              cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'transform 0.2s, box-shadow 0.2s'
             }}
           >
-            {isLogin ? 'Login' : 'Register'}
+            {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
           </button>
         </form>
 
@@ -274,4 +268,4 @@ const Login = ({ onLogin, onRegister }) => {
   )
 }
 
-export { Login, getLeaderboard, saveLeaderboard, getCurrentUser, clearCurrentUser }
+export { Login, getCurrentUser, clearCurrentUser }
