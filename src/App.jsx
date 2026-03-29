@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Login, getLeaderboard, saveLeaderboard, getCurrentUser, clearCurrentUser } from './Login'
-import Leaderboard from './Leaderboard'
+import { Login, getCurrentUser, clearCurrentUser } from './Login'
+import Leaderboard, { getLeaderboard, saveLeaderboard } from './Leaderboard'
 
 const GRID_SIZE = 25
 const CELL_SIZE = 25

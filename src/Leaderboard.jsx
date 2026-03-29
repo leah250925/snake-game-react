@@ -2,6 +2,23 @@ import { useState, useEffect } from 'react'
 
 const LEADERBOARD_API = '/api/leaderboard'
 
+const getLeaderboard = () => {
+  try {
+    const data = localStorage.getItem('snake_leaderboard')
+    return data ? JSON.parse(data) : []
+  } catch (e) {
+    return []
+  }
+}
+
+const saveLeaderboard = (leaderboard) => {
+  try {
+    localStorage.setItem('snake_leaderboard', JSON.stringify(leaderboard))
+  } catch (e) {
+    console.error('Failed to save leaderboard:', e)
+  }
+}
+
 const Leaderboard = ({ onClose }) => {
   const [leaderboard, setLeaderboard] = useState([])
   const [loading, setLoading] = useState(true)
@@ -197,3 +214,4 @@ const Leaderboard = ({ onClose }) => {
 }
 
 export default Leaderboard
+export { getLeaderboard, saveLeaderboard }
