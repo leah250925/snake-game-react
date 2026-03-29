@@ -2,6 +2,24 @@ import { useState } from 'react'
 
 const API_URL = '/api/auth'
 const CURRENT_USER_KEY = 'snake_current_user'
+const USERS_DB_KEY = 'snake_users_db'
+
+const getUsersDB = () => {
+  try {
+    const data = localStorage.getItem(USERS_DB_KEY)
+    return data ? JSON.parse(data) : []
+  } catch (e) {
+    return []
+  }
+}
+
+const saveUsersDB = (users) => {
+  try {
+    localStorage.setItem(USERS_DB_KEY, JSON.stringify(users))
+  } catch (e) {
+    console.error('Failed to save users:', e)
+  }
+}
 
 const getCurrentUser = () => {
   return localStorage.getItem(CURRENT_USER_KEY)
@@ -42,12 +60,26 @@ const Login = ({ onLogin, onRegister }) => {
       
       const data = await response.json()
       
-      if (!response.ok) throw new Error(data.error)
-      
-      setCurrentUser(username)
-      onLogin(username)
+      if (response.ok) {
+        setCurrentUser(username)
+        onLogin(username)
+      } else {
+        throw new Error(data.error)
+      }
     } catch (err) {
-      setError(err.message || 'Login failed')
+      if (err.message.includes('users') || err.message.includes('table')) {
+        const users = getUsersDB()
+        const user = users.find(u => u.username === username && u.password === password)
+        if (user) {
+          setCurrentUser(username)
+          onLogin(username)
+          setLoading(false)
+          return
+        }
+        setError('Invalid username or password')
+      } else {
+        setError(err.message || 'Login failed')
+      }
     } finally {
       setLoading(false)
     }
@@ -85,12 +117,27 @@ const Login = ({ onLogin, onRegister }) => {
       
       const data = await response.json()
       
-      if (!response.ok) throw new Error(data.error)
-      
-      setCurrentUser(username)
-      onRegister(username)
+      if (response.ok) {
+        setCurrentUser(username)
+        onRegister(username)
+      } else {
+        throw new Error(data.error)
+      }
     } catch (err) {
-      setError(err.message || 'Registration failed')
+      if (err.message.includes('users') || err.message.includes('table')) {
+        const users = getUsersDB()
+        const existing = users.find(u => u.username === username)
+        if (existing) {
+          setError('Username already exists')
+        } else {
+          users.push({ username, password, createdAt: new Date().toISOString() })
+          saveUsersDB(users)
+          setCurrentUser(username)
+          onRegister(username)
+        }
+      } else {
+        setError(err.message || 'Registration failed')
+      }
     } finally {
       setLoading(false)
     }
